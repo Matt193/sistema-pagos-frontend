@@ -7,41 +7,46 @@ function App() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [useMock, setUseMock] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  const loadCatalog = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await CatalogService.getCatalog();
+      setServices(data);
+      setLastRefresh(new Date());
+    } catch (err) {
+      setError('Error al cargar el catálogo de servicios');
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadCatalog = async () => {
-      try {
-        setLoading(true);
-        const data = useMock 
-          ? CatalogService.getMockCatalog()
-          : await CatalogService.getCatalog();
-        setServices(data);
-        setError(null);
-      } catch (err) {
-        setError('Error al cargar el catálogo de servicios');
-        console.error('Error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadCatalog();
-  }, [useMock]);
+  }, []);
+
+  const handleRefresh = () => {
+    loadCatalog();
+  };
 
   return (
     <div className="App">
       <header className="App-header">
         <h1>Catálogo de Servicios</h1>
-        <div className="toggle-container">
-          <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={useMock}
-              onChange={(e) => setUseMock(e.target.checked)}
-            />
-            Usar datos de prueba
-          </label>
+        <div className="refresh-container">
+          <button 
+            className="refresh-button"
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            {loading ? 'Actualizando...' : '🔄 Refrescar Datos'}
+          </button>
+          <span className="last-refresh">
+            Última actualización: {lastRefresh.toLocaleTimeString()}
+          </span>
         </div>
       </header>
       
@@ -51,8 +56,8 @@ function App() {
         ) : error ? (
           <div className="error">
             <p>{error}</p>
-            <button onClick={() => window.location.reload()}>
-              Reintentar
+            <button onClick={handleRefresh} className="refresh-error-button">
+              Refrescar Datos
             </button>
           </div>
         ) : (
