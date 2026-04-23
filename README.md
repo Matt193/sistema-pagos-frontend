@@ -1,14 +1,18 @@
 # Frontend - Sistema de Pagos
 
-Frontend desarrollado en React para el sistema de pagos que consume el endpoint `/GET catalog` y muestra el catálogo de servicios en formato de tabla.
+Frontend desarrollado en React para el sistema de pagos que consume el endpoint `/GET catalog` desde AWS API Gateway y muestra el catálogo de servicios en formato de tabla.
+
+## 🚀 Aplicación en Producción
+
+**URL de producción:** http://sistema-pagos-frontend-prod.s3-website-us-east-1.amazonaws.com/
 
 ## Características
 
 - **Interfaz ejecutiva corporativa** con diseño profesional y moderno
 - **Interfaz responsiva** que se adapta a diferentes dispositivos
 - **Tabla interactiva** con búsqueda, filtrado y ordenamiento
-- **Datos de prueba (mock)** para desarrollo mientras el backend no está listo
-- **Toggle** para cambiar entre datos reales y datos de prueba
+- **Datos dinámicos** consumidos directamente desde API Gateway de AWS
+- **Botón de refresco manual** para actualizar datos desde el cluster Redis
 - **Diseño corporativo** con badges de categorías y estados
 - **Formato de precios** en pesos colombianos
 
@@ -20,9 +24,10 @@ src/
     - CatalogTable.js     # Componente principal de la tabla
     - CatalogTable.css    # Estilos de la tabla
   services/
-    - CatalogService.js   # Servicio para consumir API y datos mock
+    - CatalogService.js   # Servicio para consumir API de AWS
   App.js                  # Componente principal
   App.css                 # Estilos generales
+  .env                    # Variables de entorno (URL de API Gateway)
 ```
 
 ## Instalación y Ejecución Local
@@ -32,10 +37,15 @@ src/
    npm install
    ```
 
-2. **Configurar variables de entorno (opcional):**
+2. **Configurar variables de entorno:**
    ```bash
    cp .env.example .env
    # Editar .env con la URL de tu API Gateway
+   ```
+   
+   **URL actual configurada:**
+   ```
+   REACT_APP_API_URL=https://hb98779maa.execute-api.us-east-1.amazonaws.com/dev
    ```
 
 3. **Ejecutar en modo desarrollo:**
@@ -99,10 +109,13 @@ chmod +x build-aws.sh
 
 ## Configuración de la API
 
-El frontend consume el endpoint `/GET catalog` a través del servicio `CatalogService`.
+El frontend consume el endpoint `/GET catalog` directamente desde AWS API Gateway.
 
 ### URL de la API
-La URL se configura mediante la variable de entorno `REACT_APP_API_URL`. Si no se especifica, usará un valor por defecto que deberás actualizar.
+
+**Endpoint configurado:** `https://hb98779maa.execute-api.us-east-1.amazonaws.com/dev/catalog`
+
+La URL se configura mediante la variable de entorno `REACT_APP_API_URL` en el archivo `.env`.
 
 ### Formato de Datos Esperado
 
@@ -114,12 +127,14 @@ La URL se configura mediante la variable de entorno `REACT_APP_API_URL`. Si no s
     "proveedor": "Empresa Eléctrica Nacional",
     "servicio": "Luz Residencial",
     "plan": "Básico",
-    "precio_mensual": 45000,
+    "precio_mensual": 4500,
     "detalles": "150 kWh incluidos",
     "estado": "Activo"
   }
 ]
 ```
+
+*Nota: Los datos son consumidos dinámicamente desde un cluster Redis a través de API Gateway.*
 
 ## Características de la Tabla
 
@@ -128,10 +143,11 @@ La URL se configura mediante la variable de entorno `REACT_APP_API_URL`. Si no s
 - **Badges visuales**: Categorías y estados con colores diferenciados
 - **Formato de moneda**: Precios en pesos colombianos
 - **Diseño responsivo**: Se adapta a móviles y tablets
+- **Refresco manual**: Botón para actualizar datos desde la API
 
-## Datos de Prueba
+## Datos Dinámicos
 
-La aplicación incluye 20 servicios de ejemplo que cubren:
+La aplicación consume datos en tiempo real desde el cluster Redis a través de API Gateway. Los servicios mostrados incluyen:
 - Energía eléctrica
 - Agua potable
 - Servicios de Internet
@@ -139,7 +155,7 @@ La aplicación incluye 20 servicios de ejemplo que cubren:
 - TV por cable
 - Paquetes combinados
 
-Puedes activar/desactivar los datos de prueba con el toggle en la interfaz.
+**Actualización manual:** Utiliza el botón "🔄 Refrescar Datos" para obtener la información más reciente del cluster.
 
 ## Tecnologías Utilizadas
 
@@ -150,20 +166,22 @@ Puedes activar/desactivar los datos de prueba con el toggle en la interfaz.
 
 ## Consideraciones para Producción
 
-1. **CORS**: Asegúrate de que tu API Gateway tenga configurado CORS correctamente
-2. **Variables de entorno**: Configura `REACT_APP_API_URL` con tu URL real
-3. **HTTPS**: CloudFront proporcionará HTTPS automáticamente
+1. **CORS**: API Gateway ya está configurado con CORS correctamente
+2. **Variables de entorno**: `REACT_APP_API_URL` configurada con URL real de AWS
+3. **HTTPS**: CloudFront proporciona HTTPS automáticamente
 4. **Cache**: CloudFront cacheará los archivos estáticos para mejor rendimiento
 5. **Monitoreo**: Considera configurar AWS CloudWatch para monitoreo
+6. **Refresco de datos**: Los usuarios pueden actualizar manualmente los datos desde Redis
 
 ## Troubleshooting
 
 ### Problemas Comunes
 
-1. **Error de CORS**: Verifica la configuración de CORS en API Gateway
-2. **Error 403**: Revisa la política del bucket S3
+1. **Error de CORS**: Revisa la configuración de CORS en API Gateway
+2. **Error 403**: Verifica la política del bucket S3
 3. **Error 404**: Verifica que `index.html` esté configurado como documento por defecto
-4. **No carga datos**: Revisa la URL de la API y activa el modo de prueba
+4. **No carga datos**: Revisa la URL de la API y el estado del cluster Redis
+5. **Datos desactualizados**: Usa el botón de refresco manual para actualizar
 
 ### Logs y Debug
 
